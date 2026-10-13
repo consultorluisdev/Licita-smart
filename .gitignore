@@ -1,4 +1,8 @@
-/target
+/backend/licita-api/target
+/frontend/node_modules
+/frontend/licita-ti/node_modules
+/frontend/licita-ti/dist
+/frontend/licita-ti/*.tsbuildinfo
 .env
 .env.*
 !.env.example
