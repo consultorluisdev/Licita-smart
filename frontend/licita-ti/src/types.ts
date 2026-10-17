@@ -1,36 +1,38 @@
-export interface Licitacao {
-    id: string;
-    objeto: string;
-    orgao: string;
-    uf?: string;
-    municipio?: string;
-    valor_estimado?: number;
-    modalidade?: string;
-    data_publicacao?: string;
-    data_limite?: string;
-    link_pncp: string;
-    cnpj_orgao?: string;
+export type Status =
+  | "active"
+  | "paused"
+  | "closed"
+  | "pending";
+
+export interface Licitation {
+  id: string;
+  edital: string;
+  objeto: string;
+  orgao: string;
+  municipio: string;
+  uf: string;
+  modalidade: string;
+  valor: number;
+  dataPublicacao: string;
+  prazo: string;
+  status: Status;
+  score: number;
+  categoria: string;
+}
+export interface Opportunity {
+  id: string;
+  title: string;
+  agency: string;
+  location: string;
+  value: number | null;
+  deadline: string | null;
+  category: string;
+  sourceUrl?: string;
 }
 
-export interface ChatResponse {
-    resposta: string;
-    licitacoes: Licitacao[];
-}
-
-export interface LicitacoesResponse {
-    total: number;
-    pagina: number;
-    resultados: Licitacao[];
-}
-
-export interface HealthResponse {
-    status: string;
-}
-
-export interface ChatMessage {
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    licitacoes?: Licitacao[];
-    timestamp: Date;
+export interface Metric {
+  label: string;
+  value: string;
+  change: string;
+  positive?: boolean;
 }
