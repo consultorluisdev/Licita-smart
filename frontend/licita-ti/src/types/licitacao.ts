@@ -16,7 +16,7 @@ export interface BuscaResponse {
   total: number;
   pagina: number;
   tamanho: number;
-  total_paginas: number;
+  tem_proxima_pagina: boolean;
   resultados: Licitacao[];
 }
 

@@ -39,7 +39,7 @@ export function Licitacoes() {
   const [pagina, setPagina] = useState(1);
   const [termo, setTermo] = useState("");
 
-  const { dados, loading, error, buscar } = useLicitacoes({
+  const { dados, loading, error } = useLicitacoes({
     uf,
     pagina,
     tamanho: 20,
@@ -56,31 +56,21 @@ export function Licitacoes() {
       )
     : resultados;
 
-  async function alterarPagina(novaPagina: number) {
-    if (novaPagina < 1 || !dados || novaPagina > dados.total_paginas) {
+  function alterarPagina(novaPagina: number) {
+    if (
+      novaPagina < 1 ||
+      !dados ||
+      (novaPagina > pagina && !dados.tem_proxima_pagina)
+    ) {
       return;
     }
 
     setPagina(novaPagina);
-
-    await buscar({
-      uf,
-      pagina: novaPagina,
-      tamanho: 20,
-      apenas_ti: true,
-    });
   }
 
-  async function alterarUf(novaUf: string) {
+  function alterarUf(novaUf: string) {
     setUf(novaUf);
     setPagina(1);
-
-    await buscar({
-      uf: novaUf,
-      pagina: 1,
-      tamanho: 20,
-      apenas_ti: true,
-    });
   }
 
   return (
@@ -106,7 +96,7 @@ export function Licitacoes() {
               <span className="font-medium text-white">
                 {dados.total.toLocaleString("pt-BR")}
               </span>{" "}
-              resultados encontrados
+              resultados nesta página
             </div>
           )}
         </div>
@@ -131,7 +121,7 @@ export function Licitacoes() {
 
           <select
             value={uf}
-            onChange={(event) => void alterarUf(event.target.value)}
+            onChange={(event) => alterarUf(event.target.value)}
             className="h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-sm text-white outline-none focus:border-zinc-600"
           >
             <option value="SC">Santa Catarina</option>
@@ -231,11 +221,11 @@ export function Licitacoes() {
             </div>
           )}
 
-          {dados && dados.total_paginas > 1 && (
+          {dados && (pagina > 1 || dados.tem_proxima_pagina) && (
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-300">
               <button
                 type="button"
-                onClick={() => void alterarPagina(pagina - 1)}
+                onClick={() => alterarPagina(pagina - 1)}
                 disabled={pagina === 1 || loading}
                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -244,13 +234,13 @@ export function Licitacoes() {
               </button>
 
               <span>
-                Página {pagina} de {dados.total_paginas}
+                Página {pagina}
               </span>
 
               <button
                 type="button"
-                onClick={() => void alterarPagina(pagina + 1)}
-                disabled={pagina === dados.total_paginas || loading}
+                onClick={() => alterarPagina(pagina + 1)}
+                disabled={!dados.tem_proxima_pagina || loading}
                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Próxima

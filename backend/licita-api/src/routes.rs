@@ -45,6 +45,7 @@ pub async fn listar_licitacoes(
         .filter(|s| !s.is_empty());
 
     let itens = buscar_propostas(&state.http, uf.as_deref(), pagina, tamanho).await?;
+    let tem_proxima_pagina = itens.len() == tamanho as usize;
     let mut resultados: Vec<Licitacao> = Vec::new();
 
     for item in &itens {
@@ -56,17 +57,13 @@ pub async fn listar_licitacoes(
     }
 
     let total = resultados.len();
-    let offset = ((pagina - 1) * tamanho).min(total as u32) as usize;
-    let paginated = resultados
-        .into_iter()
-        .skip(offset)
-        .take(tamanho as usize)
-        .collect::<Vec<_>>();
 
     Ok(Json(BuscaResponse {
         total,
         pagina,
-        resultados: paginated,
+        tamanho,
+        tem_proxima_pagina,
+        resultados,
     }))
 }
 

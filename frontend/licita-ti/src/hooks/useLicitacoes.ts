@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { listarLicitacoes } from "../services/licitacaoService";
 import { type BuscaResponse, type LicitacoesParams } from "../types/licitacao";
 
@@ -6,47 +6,57 @@ interface UseLicitacoesResult {
   dados: BuscaResponse | null;
   loading: boolean;
   error: string | null;
-  buscar: (params?: LicitacoesParams) => Promise<void>;
 }
 
 export function useLicitacoes(
   params: LicitacoesParams = {},
 ): UseLicitacoesResult {
+  const { uf, pagina, tamanho, apenas_ti } = params;
   const [dados, setDados] = useState<BuscaResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const buscar = useCallback(
-    async (novosParams?: LicitacoesParams) => {
+  useEffect(() => {
+    let active = true;
+
+    async function carregar() {
       try {
         setLoading(true);
         setError(null);
 
         const resposta = await listarLicitacoes({
-          ...params,
-          ...novosParams,
+          uf,
+          pagina,
+          tamanho,
+          apenas_ti,
         });
 
-        setDados(resposta);
+        if (active) {
+          setDados(resposta);
+        }
       } catch (err) {
         console.error("Erro ao buscar licitações:", err);
 
-        setError("Não foi possível carregar as licitações. Tente novamente.");
+        if (active) {
+          setError("Não foi possível carregar as licitações. Tente novamente.");
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
-    },
-    [params],
-  );
+    }
 
-  useEffect(() => {
-    void buscar();
-  }, [buscar]);
+    void carregar();
+
+    return () => {
+      active = false;
+    };
+  }, [apenas_ti, pagina, tamanho, uf]);
 
   return {
     dados,
     loading,
     error,
-    buscar,
   };
 }

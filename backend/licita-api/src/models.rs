@@ -19,6 +19,8 @@ pub struct Licitacao {
 pub struct BuscaResponse {
     pub total: usize,
     pub pagina: u32,
+    pub tamanho: u32,
+    pub tem_proxima_pagina: bool,
     pub resultados: Vec<Licitacao>,
 }
 
