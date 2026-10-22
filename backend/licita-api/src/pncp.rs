@@ -11,15 +11,16 @@ pub async fn buscar_propostas(
     tamanho_pagina: u32,
 ) -> anyhow::Result<Vec<Value>> {
     let data_final = (Local::now() + Duration::days(60))
-        .format("%Y-%m-%d")
+        .format("%Y%m%d")
         .to_string();
 
     let tamanho = tamanho_pagina.clamp(1, 50);
 
     let mut req = client
-        .get(format!("{BASE_URL}/contratacoes/propostas"))
+        .get(format!("{BASE_URL}/contratacoes/proposta"))
         .query(&[
             ("dataFinal", data_final.as_str()),
+            ("codigoModalidadeContratacao", "8"),
             ("pagina", pagina.to_string().as_str()),
             ("tamanhoPagina", tamanho.to_string().as_str()),
         ]);
