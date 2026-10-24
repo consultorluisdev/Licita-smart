@@ -107,36 +107,36 @@ export function LicitationTable({ licitacoes }: LicitationTableProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
       <div className="overflow-x-auto">
-        <table className="w-full min-W-[1100px] border-collapse">
+        <table className="w-full min-W-[1250px] border-collapse">
           <thead>
             <tr className="border-b border-zinc-800 bg-zinc-900/70">
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Licitação
               </th>
 
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Órgão
               </th>
               <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Local
               </th>
 
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Modalidade
               </th>
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Valor
               </th>
 
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Publicação
               </th>
 
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Oportunidade
               </th>
 
-              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <th whitespace-nowrap className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Ações
               </th>
             </tr>
@@ -152,13 +152,14 @@ export function LicitationTable({ licitacoes }: LicitationTableProps) {
                   className="group transition-colors hover:bg-zinc-900/50"
                 >
                   <td className="px-5 py-4 align-top">
-                    <div className="max-W-[360px]">
-                      <p className="text-sm font-medium leading-5 text-white">
+                    <div className="max-W-[380px]">
+                      <p className="line-clamp-3 text-sm font-medium leading-5 text-white">
                         {licitacao.objeto}
                       </p>
 
                       <p className="mt-1 text-xs text-zinc-500">
-                        Edital #{licitacao.id}
+                        {licitacao.municipio ?? "Local não informado"} .{" "}
+                        {licitacao.uf ?? "UF não informada"}
                       </p>
                     </div>
                   </td>
