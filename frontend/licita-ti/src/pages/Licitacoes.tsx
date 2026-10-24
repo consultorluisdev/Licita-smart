@@ -1,26 +1,24 @@
-import { useState } from "react";
-import {
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  Loader2,
-  Search,
-} from "lucide-react";
+import { Bell, Bot, ExternalLink, Eye, Star } from 'lucide-react';
 import { useLicitacoes } from "../hooks/useLicitacoes";
+import type { Licitacao } from "../types/licitacao";
 
-function formatarValor(valor: number | null) {
-  if (valor === null) {
+interface LicitationTableProps {
+  licitacoes: Licitacao[];
+}
+
+function formatarValor(valor: number | null | undefined) {
+  if (valor == null) {
     return "Não informado";
   }
 
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
+    maximumFractionDigits: 2,
   }).format(valor);
 }
 
-function formatarData(data: string | null) {
+function formatarData(data: string | null | undefined) {
   if (!data) {
     return "Não informado";
   }
@@ -28,228 +26,252 @@ function formatarData(data: string | null) {
   const dataFormatada = new Date(data);
 
   if (Number.isNaN(dataFormatada.getTime())) {
-    return data;
+    return "Não informado";
   }
 
   return new Intl.DateTimeFormat("pt-BR").format(dataFormatada);
 }
 
-export function Licitacoes() {
-  const [uf, setUf] = useState("SC");
-  const [pagina, setPagina] = useState(1);
-  const [termo, setTermo] = useState("");
-
-  const { dados, loading, error } = useLicitacoes({
-    uf,
-    pagina,
-    tamanho: 20,
-    apenas_ti: true,
-  });
-
-  const resultados = dados?.resultados ?? [];
-
-  const resultadosFiltrados = termo.trim()
-    ? resultados.filter((licitacao) =>
-        `${licitacao.objeto} ${licitacao.orgao}`
-          .toLowerCase()
-          .includes(termo.toLowerCase()),
-      )
-    : resultados;
-
-  function alterarPagina(novaPagina: number) {
-    if (
-      novaPagina < 1 ||
-      !dados ||
-      (novaPagina > pagina && !dados.tem_proxima_pagina)
-    ) {
-      return;
-    }
-
-    setPagina(novaPagina);
+function getOpportunityScore(licitacao: Licitacao) {
+  /*
+  temporario:
+  score real será calculado pelo backend/servico de analise.
+  enquanto isso mantemos UI preparada.
+  */
+  if (licitacao.valor_estimado != null && licitacao.valor_estimado >= 100000) {
+    return 90;
   }
 
-  function alterarUf(novaUf: string) {
-    setUf(novaUf);
-    setPagina(1);
+  if (licitacao.valor_estimado != null && licitacao.valor_estimado >= 50000) {
+    return 78;
+  }
+
+  return 64;
+}
+
+function scoreLabel(score: number) {
+  if (score >= 85) {
+    return "Excelente";
+  }
+
+  if (score >= 70) {
+    return "Boa";
+  }
+
+  return "Moderada";
+}
+
+function scoreClasses(score: number) {
+  if (score >= 85) {
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+  }
+
+  if (score >= 70) {
+    return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+  }
+
+  return "border-zinc-700 bg-zinc-800/60 text-zinc-300";
+}
+
+export function Licitacoes() {
+  const { dados, loading, error } = useLicitacoes({ apenas_ti: true });
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-sm text-zinc-400">
+        Carregando licitações...
+      </div>
+    );
+  }
+
+  if (error || !dados) {
+    return (
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-sm text-rose-300">
+        {error ?? "Não foi possível carregar as licitações."}
+      </div>
+    );
+  }
+
+  return <LicitationTable licitacoes={dados.resultados} />;
+}
+
+export function LicitationTable({ licitacoes }: LicitationTableProps) {
+  if (licitacoes.length === 0) {
+    return (
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-center text-sm text-zinc-400">
+        Nenhuma licitação encontrada.
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-medium text-zinc-400">
-              Inteligência de Licitações
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">
-              Licitações
-            </h1>
+    <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
+      <div className="overflow-x-auto">
+        <table className="w-full min-W-[1100px] border-collapse">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-900/70">
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Licitação
+              </th>
 
-            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              Encontre oportunidades de tecnologias, SaaS e serviços digitais públicas
-              no PNCP.
-            </p>
-          </div>
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Órgão
+              </th>
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Local
+              </th>
 
-          {dados && (
-            <div className="text-sm text-zinc-400">
-              <span className="font-medium text-white">
-                {dados.total.toLocaleString("pt-BR")}
-              </span>{" "}
-              resultados nesta página
-            </div>
-          )}
-        </div>
-      </div>
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Modalidade
+              </th>
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Valor
+              </th>
 
-      <div className="card p-4">
-        <div className="flex flex-col gap-3 lg:flex-row">
-          <div className="relative flex-1">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-            />
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Publicação
+              </th>
 
-            <input
-              type="text"
-              value={termo}
-              onChange={(event) => setTermo(event.target.value)}
-              placeholder="Pesquisar objeto ou órgão..."
-              className="h-11 w-full rounded-xl border border-zinc-800 bg-zinc-950 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-zinc-600"
-            />
-          </div>
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Oportunidade
+              </th>
 
-          <select
-            value={uf}
-            onChange={(event) => alterarUf(event.target.value)}
-            className="h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-sm text-white outline-none focus:border-zinc-600"
-          >
-            <option value="SC">Santa Catarina</option>
-            <option value="PR">Paraná</option>
-            <option value="RS">Rio Grande do Sul</option>
-            <option value="SP">São Paulo</option>
-            <option value="RJ">Rio de Janeiro</option>
-            <option value="">Todos os estados</option>
-          </select>
-        </div>
-      </div>
+              <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Ações
+              </th>
+            </tr>
+          </thead>
 
-      {loading && (
-        <div className="card flex items-center justify-center gap-3 p-8">
-          <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
-          <span className="text-sm text-zinc-300">Carregando licitações...</span>
-        </div>
-      )}
+          <tbody className="divide-y divide-zinc-800/80">
+            {licitacoes.map((licitacao) => {
+              const score = getOpportunityScore(licitacao);
 
-      {!loading && error && (
-        <div className="card flex items-center gap-3 p-5 text-rose-300">
-          <AlertCircle size={18} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {!loading && !error && (
-        <>
-          {resultadosFiltrados.length === 0 ? (
-            <div className="card p-8 text-center text-sm text-zinc-400">
-              Nenhuma licitação encontrada para os filtros atuais.
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {resultadosFiltrados.map((licitacao) => (
-                <article key={licitacao.id} className="card p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm text-zinc-400">
-                        {licitacao.orgao} • {licitacao.uf ?? "UF não informada"}
-                      </p>
-                      <h2 className="text-lg font-semibold text-white">
+              return (
+                <tr
+                  key={licitacao.id}
+                  className="group transition-colors hover:bg-zinc-900/50"
+                >
+                  <td className="px-5 py-4 align-top">
+                    <div className="max-W-[360px]">
+                      <p className="text-sm font-medium leading-5 text-white">
                         {licitacao.objeto}
-                      </h2>
-                    </div>
+                      </p>
 
-                    <a
-                      href={licitacao.link_pncp}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500"
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Edital #{licitacao.id}
+                      </p>
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-4 align-top">
+                    <p className="max-W-[190px] truncate text-sm text-zinc-300">
+                      {licitacao.orgao}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4 align-top">
+                    <p className="text-sm text-zinc-300">
+                      {licitacao.municipio ?? "Não informado"}
+                    </p>
+
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {licitacao.uf ?? "UF não informada"}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4 align-top">
+                    <span className="inline-flex rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300">
+                      {licitacao.modalidade ?? "Não informado"}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-4 align-top">
+                    <p className="whitespace-nowrap text-sm font-medium text-white">
+                      {formatarValor(licitacao.valor_estimado)}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4 align-top">
+                    <p className="whitespace-nowrap text-sm text-zinc-300">
+                      {formatarData(licitacao.data_publicacao)}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4 align-top">
+                    <div
+                      className={`inline-flex flex-col rounded-lg border px-2.5 py-1.5 ${scoreClasses(
+                        score,
+                      )}`}
                     >
-                      <ExternalLink size={14} />
-                      Ver edital
-                    </a>
-                  </div>
+                      <span className="text-sm font-semibold">{score}</span>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">
-                        Valor estimado
-                      </p>
-                      <p className="mt-1 text-sm text-white">
-                        {formatarValor(licitacao.valor_estimado)}
-                      </p>
+                      <span className="text-[10px] uppercase tracking-wide opacity-80">
+                        {scoreLabel(score)}
+                      </span>
                     </div>
+                  </td>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">
-                        Publicação
-                      </p>
-                      <p className="mt-1 text-sm text-white">
-                        {formatarData(licitacao.data_publicacao)}
-                      </p>
+                  <td className="px-5 py-4 align-top">
+                    <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        title="Ver detalhes"
+                        className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-white"
+                      >
+                        <Eye size={16} />
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Analisar oportunidade"
+                        className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-violet-300"
+                      >
+                        <Bot size={16} />
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Favoritar"
+                        className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-amber-300"
+                      >
+                        <Star size={16} />
+                      </button>
+
+                      <button
+                        type="button"
+                        title="Monitorar"
+                        className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-blue-300"
+                      >
+                        <Bell size={16} />
+                      </button>
+
+                      {licitacao.link_pncp ? (
+                        <a
+                          href={licitacao.link_pncp}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Abrir no PNCP"
+                          className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-white"
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                      ) : null}
                     </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">
-                        Modalidade
-                      </p>
-                      <p className="mt-1 text-sm text-white">
-                        {licitacao.modalidade ?? "Não informado"}
-                      </p>
-                    </div>
+      <div className="flex items-center justify-between border-t border-zinc-800 px-5 py-3">
+        <p className="text-xs text-zinc-500">
+          {licitacoes.length} licitação{licitacoes.length !== 1 ? "ões" : ""}
+        </p>
 
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">
-                        Município
-                      </p>
-                      <p className="mt-1 text-sm text-white">
-                        {licitacao.municipio ?? "Não informado"}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-
-          {dados && (pagina > 1 || dados.tem_proxima_pagina) && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-300">
-              <button
-                type="button"
-                onClick={() => alterarPagina(pagina - 1)}
-                disabled={pagina === 1 || loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <ChevronLeft size={16} />
-                Anterior
-              </button>
-
-              <span>
-                Página {pagina}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => alterarPagina(pagina + 1)}
-                disabled={!dados.tem_proxima_pagina || loading}
-                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Próxima
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        <p className="text-xs text-zinc-600">Dados provenientes do PNCP</p>
+      </div>
     </div>
   );
 }
