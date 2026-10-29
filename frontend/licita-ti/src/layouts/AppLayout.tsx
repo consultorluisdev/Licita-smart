@@ -254,7 +254,7 @@ export function AllLayout() {
                             </div>
 
                             <p className='mt-1 text-[11px] text-slate-500'>
-                                Rust / Axum
+                                C# / Dotnet
                             </p>
                         </div>
                     )}
@@ -282,7 +282,7 @@ export function AllLayout() {
                     ? "lg:pl-[76px]"
                     : "lg:pl-[252px]"
                 }
-                
+
                 `}
             >
                 {/* Header */}

@@ -1,6 +1,5 @@
 import { Bot, FileSearch,  Search, Send, Sparkles, Target } from "lucide-react";
 import { useState } from "react";
-import type { ChatResponse } from "../types/agent";
 
 const suggestions = [
     {
@@ -25,8 +24,6 @@ const suggestions = [
 ];
 
 export function Agent() {
-    const [response, setResponse] = useState<ChatResponse | null>(null)
-    const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState("");
 
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -180,7 +177,6 @@ export function Agent() {
         </div>
     );
 }
-
 
 
 

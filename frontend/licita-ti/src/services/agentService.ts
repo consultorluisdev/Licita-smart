@@ -1,5 +1,5 @@
 import { api } from "../api";
-import { ChatResponse, type ChatRequest } from "../types/agent";
+import { type ChatResponse, type ChatRequest } from "../types/agent";
 
 
 export async function enviarMessagem(

@@ -1,26 +1,8 @@
-import { api } from "../api";
 import type { Opportunity } from "../types";
 import type { DashboardOverview } from "../types/dashboard";
+import type { Licitacao } from "../types/licitacao";
 import { brl } from "../utils/format";
-
-interface BackendLicitacao {
-  id: string;
-  objeto: string;
-  orgao: string;
-  uf: string | null;
-  municipio: string | null;
-  valor_estimado: number | null;
-  modalidade: string | null;
-  data_publicacao: string | null;
-  data_limite: string | null;
-  link_pncp: string;
-}
-
-interface BackendBuscaResponse {
-  total: number;
-  pagina: number;
-  resultados: BackendLicitacao[];
-}
+import { listarLicitacoes } from "./licitacaoService";
 
 function categorize(title: string) {
   const normalized = title
@@ -37,7 +19,7 @@ function categorize(title: string) {
   return "Tecnologia";
 }
 
-function mapOpportunity(item: BackendLicitacao): Opportunity {
+function mapOpportunity(item: Licitacao): Opportunity {
   const location = [item.municipio, item.uf].filter(Boolean).join(" / ");
 
   return {
@@ -53,9 +35,7 @@ function mapOpportunity(item: BackendLicitacao): Opportunity {
 }
 
 export async function getDashboard(): Promise<DashboardOverview> {
-  const { data } = await api.get<BackendBuscaResponse>("/licitacoes", {
-    params: { pagina: 1, tamanho: 50, apenas_ti: true },
-  });
+  const data = await listarLicitacoes({ pagina: 1, tamanho: 50 });
   const opportunities = data.resultados.map(mapOpportunity);
   const withValues = opportunities.filter(
     (opportunity): opportunity is Opportunity & { value: number } =>
