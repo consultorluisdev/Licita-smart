@@ -1,4 +1,7 @@
 /backend/licita-api/target
+/backend/licitasmart.Api/**/bin/
+/backend/licitasmart.Api/**/obj/
+*.user
 /frontend/node_modules
 /frontend/licita-ti/node_modules
 /frontend/licita-ti/dist
@@ -9,3 +12,6 @@
 *.db
 *.sqlite
 *.sqlite3
+
+# Configuração local de desenvolvimento (pode conter credenciais)
+backend/licitasmart.Api/src/LicitaSmart.Api/appsettings.Development.json

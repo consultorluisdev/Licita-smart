@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LicitaSmart.Api/LicitaSmart.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LicitaSmart.Tests/LicitaSmart.Tests.csproj" />
+  </Folder>
+</Solution>

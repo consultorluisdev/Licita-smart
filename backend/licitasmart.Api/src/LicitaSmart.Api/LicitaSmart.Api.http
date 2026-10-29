@@ -1,0 +1,14 @@
+@LicitaSmart.Api_HostAddress = http://localhost:5193
+
+GET {{LicitaSmart.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{LicitaSmart.Api_HostAddress}}/licitacoes?page=1&pageSize=20
+Accept: application/json
+
+###
+
+GET {{LicitaSmart.Api_HostAddress}}/api/licitacoes?page=1&pageSize=20
+Accept: application/json
