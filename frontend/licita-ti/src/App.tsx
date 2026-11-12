@@ -11,8 +11,8 @@ function App() {
         <Route element={<AllLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="licitacoes" element={<Licitacoes />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="agent" element={<Agent />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

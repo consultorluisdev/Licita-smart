@@ -15,3 +15,7 @@
 
 # Configuração local de desenvolvimento (pode conter credenciais)
 backend/licitasmart.Api/src/LicitaSmart.Api/appsettings.Development.json
+
+target/
+*.log
+.DS_Store

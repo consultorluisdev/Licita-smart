@@ -7,7 +7,8 @@ Guia de execução local do backend (.NET 10) e do frontend (React + Vite), com 
 | Camada | Tecnologia | Porta padrão |
 |---|---|---|
 | Backend | .NET 10 / ASP.NET Core / EF Core + Npgsql | `8081` |
-| Frontend | React 19 + Vite + Tailwind | `5173` (ou próxima livre) |
+| Frontend | React 19 + Vite + Tailwind | `5174` |
+| Agente | Rust + Axum + rig | `8082` |
 | Banco | PostgreSQL | `5432` |
 
 ## Pré-requisitos
@@ -16,6 +17,8 @@ Guia de execução local do backend (.NET 10) e do frontend (React + Vite), com 
 - Node.js 20+ e npm
 - PostgreSQL acessível em `localhost:5432`
 - Docker (opcional, para subir o Postgres)
+- Rust stable + linker C (MinGW-w64 no Windows) para o agente
+- Ollama (opcional; necessário para `LLM_PROVIDER=ollama`) ou chave da OpenAI
 
 ## Banco de dados
 
@@ -107,6 +110,7 @@ Crie `frontend/licita-ti/.env`:
 
 ```env
 VITE_API_URL=http://localhost:8081
+VITE_AGENT_URL=http://localhost:8082
 ```
 
 > Importante: o Vite lê o `.env` apenas na inicialização. Depois de criar/alterar o arquivo, reinicie o `npm run dev`.
@@ -179,7 +183,7 @@ Causas comuns:
 
 ## Estabilização antes do agente de IA
 
-O agente fica fora desta entrega até os itens abaixo estarem concluídos.
+Checklist de estabilização recomendado antes de produção.
 
 ### Base
 
@@ -217,21 +221,59 @@ O agente fica fora desta entrega até os itens abaixo estarem concluídos.
 - Frontend reflete online/offline sem F5
 - Nenhuma credencial ou URL fixa no código
 
-## Agente de IA (próxima fase)
+## Agente de IA (Rust + rig)
 
-Depois do gate acima, entra o endpoint `POST /chat`:
+O agente fica em `agents/licita-smart-agent` e expõe:
 
-```json
-{ "message": "Encontre licitações de SaaS em Santa Catarina" }
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/health` | Status, provider e modelo em uso |
+| POST | `/api/v1/chat` | `{ "message": "..." }` → `{ "success": true, "agent": "...", "response": "..." }` |
+
+### Configuração
+
+Copie o exemplo e ajuste se necessário:
+
+```bash
+cp agents/licita-smart-agent/.env.example agents/licita-smart-agent/.env
 ```
 
-Resposta esperada:
+Variáveis principais:
 
-```json
-{
-  "resposta": "Encontrei ...",
-  "licitacoes": []
-}
+```env
+LLM_PROVIDER=ollama          # openai | ollama
+LLM_MODEL=gemma3:4b          # openai: gpt-5.5 | ollama: gemma3:4b
+OLLAMA_API_BASE_URL=http://localhost:11434
+# OPENAI_API_KEY=sua_chave_api   # só com LLM_PROVIDER=openai
 ```
 
-A primeira versão será determinística (interpretação de UF, município, categoria, valor, modalidade, situação, prazo e filtro de TI), com interface pronta para trocar por um provedor LLM depois.
+O agente lê o `.env` do próprio diretório e também o `.env` da raiz.
+
+### Ollama (local e grátis)
+
+```bash
+winget install -e --id Ollama.Ollama   # Windows
+ollama pull gemma3:4b
+ollama list
+```
+
+Alternativas: `llama3.2:3b` (mais rápido) e `qwen3:4b` (mais lento em CPU por usar reasoning). Troque via `LLM_MODEL`.
+
+O daemon escuta em `http://localhost:11434`. Se não estiver rodando, execute `ollama serve`.
+
+### Rodar o agente
+
+```bash
+cargo run --manifest-path agents/licita-smart-agent/Cargo.toml
+```
+
+Verificação:
+
+```bash
+curl http://localhost:8082/health
+curl -X POST http://localhost:8082/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"O que é uma licitação?"}'
+```
+
+O chat do frontend (`/agent`) usa `VITE_AGENT_URL` e fala direto com essa porta; o backend .NET não participa dessa chamada.

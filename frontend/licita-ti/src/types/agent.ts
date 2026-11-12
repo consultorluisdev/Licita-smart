@@ -1,10 +1,9 @@
-import type { Licitacao } from "./licitacao";
-
-export interface ChatRequest{
+export interface ChatRequest {
     message: string;
 }
 
-export interface ChatResponse{
-    reposta: string;
-    licitacoes: Licitacao[];
+export interface ChatResponse {
+    success: boolean;
+    agent: string;
+    response: string;
 }

@@ -1,5 +1,6 @@
-import { Bot, FileSearch,  Search, Send, Sparkles, Target } from "lucide-react";
-import { useState } from "react";
+import { Bot, FileSearch, Search, Send, Sparkles, Target } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { enviarMensagem } from "../services/agentService";
 
 const suggestions = [
     {
@@ -25,17 +26,33 @@ const suggestions = [
 
 export function Agent() {
     const [message, setMessage] = useState("");
+    const [response, setResponse] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        if (!message.trim()) {
+        const trimmed = message.trim();
+
+        if (!trimmed || loading) {
             return;
         }
-        // a integração com POST /chat entra no proximo passo.
-        console.log("Mensagem:", message)
 
-        setMessage("");
+        setLoading(true);
+        setError("");
+
+        try {
+            const data = await enviarMensagem(trimmed);
+            setResponse(data.response);
+            setMessage("");
+        } catch {
+            setError(
+                "Não foi possível falar com o agente. Verifique se ele está em execução."
+            );
+        } finally {
+            setLoading(false);
+        }
     }
 
     function handleSuggestion(prompt: string) {
@@ -43,7 +60,7 @@ export function Agent() {
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-7rem) flex-col">
+        <div className="flex min-h-[calc(100vh-7rem)] flex-col">
             {/* Header */}
             <div className="mb-8 flex items-center gap-3">
                 <div>
@@ -73,65 +90,83 @@ export function Agent() {
             </div>
             {/* Main Agent*/}
             <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
-                {/* Empty state */}
+                {/* Empty state / resposta */}
                 <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-                    <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
-                        <Sparkles size={30} />
-                    </div>
+                    {response || error ? (
+                        <div className="w-full max-w-3xl space-y-4">
+                            {error && (
+                                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                                    {error}
+                                </div>
+                            )}
 
-                    <h2 className="text-center text-2xl font-semibold text-white">
-                        Como posso ajudar?
-                    </h2>
+                            {response && (
+                                <div className="whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-900/70 p-5 text-sm leading-6 text-slate-200">
+                                    {response}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
+                                <Sparkles size={30} />
+                            </div>
 
-                    <p className="mt-2 max-w-xl text-center text-sm leading-6 text-slate-400">
-                        Pergunte sobre licitações, oportunidades, órgãos públicos ou
-                        qualquer outro dado que você queira encontrar no Licita Smart.
-                    </p>
+                            <h2 className="text-center text-2xl font-semibold text-white">
+                                Como posso ajudar?
+                            </h2>
 
-                    {/* Suggestions */}
-                    <div className="mt-10 grid w-full max-w-5xl gap-4 md:grid-cols-3">
-                        {suggestions.map((suggestion) => {
-                            const Icon = suggestion.icon;
+                            <p className="mt-2 max-w-xl text-center text-sm leading-6 text-slate-400">
+                                Pergunte sobre licitações, oportunidades, órgãos públicos ou
+                                qualquer outro dado que você queira encontrar no Licita Smart.
+                            </p>
 
-                            return (
+                            {/* Suggestions */}
+                            <div className="mt-10 grid w-full max-w-5xl gap-4 md:grid-cols-3">
+                                {suggestions.map((suggestion) => {
+                                    const Icon = suggestion.icon;
+
+                                    return (
+                                        <button
+                                            key={suggestion.title}
+                                            type="button"
+                                            onClick={() => handleSuggestion(suggestion.prompt)}
+                                            className="group rounded-xl border border-slate-800 bg-slate-900/70 p-5 text-left transition hover:border-slate-700 hover:bg-slate-900"
+                                        >
+                                            <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition group-hover:text-indigo-400">
+                                                <Icon size={18} />
+                                            </div>
+
+                                            <h3 className="text-sm font-medium text-white">
+                                                {suggestion.title}
+                                            </h3>
+
+                                            <p className="mt-2 text-xs leading-5 text-slate-400">
+                                                {suggestion.description}
+                                            </p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Example */}
+                            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500">
+                                <span>Experimente:</span>
+
                                 <button
-                                    key={suggestion.title}
                                     type="button"
-                                    onClick={() => handleSuggestion(suggestion.prompt)}
-                                    className="group rounded-xl border border-slate-800 bg-slate-900/70 p-5 text-left transition hover:border-slate-700 hover:bg-slate-900"
+                                    onClick={() =>
+                                        handleSuggestion(
+                                            "Encontre licitações de Saas em Santa Catarina."
+                                        )
+                                    }
+                                    className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1.5 text-slate-400 transition hover:border-slate-700 hover:text-slate-200"
                                 >
-                                    <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-300 transition group-hover:text-indigo-400">
-                                        <Icon size={18} />
-                                    </div>
-
-                                    <h3 className="text-sm font-medium text-white">
-                                        {suggestion.title}
-                                    </h3>
-
-                                    <p className="mt-2 text-xs leading-5 text-slate-400">
-                                        {suggestion.description}
-                                    </p>
+                                    "Encontre licitações de Saas em SC"
                                 </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Example */}
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500">
-                        <span>Experimente:</span>
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                handleSuggestion(
-                                    "Encontre licitações de Saas em Santa Catarina."
-                                )
-                            }
-                            className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1.5 text-slate-400 transition hover:border-slate-700 hover:text-slate-200"
-                        >
-                            "Encontre licitações de Saas em SC"
-                        </button>
-                    </div>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* composer */}
@@ -155,14 +190,14 @@ export function Agent() {
                             />
 
                             <div className="mt-2 text-[11px] text-slate-600">
-                                Entre para enviar . Shift + Enter para nova linha
+                                {loading ? "Consultando o agente..." : "Enter para enviar. Shift + Enter para nova linha"}
                             </div>
                         </div>
                         <button
                             type="submit"
-                            disabled={!message.trim()}
-                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-white transition hover:bg-indigo-400 disable:cursor-not-allowed disable:opacity-40"
-                            aria-label="Enviar menssagem"
+                            disabled={!message.trim() || loading}
+                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label="Enviar mensagem"
                         >
                             <Send size={18} />
                         </button>
