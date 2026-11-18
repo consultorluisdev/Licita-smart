@@ -1,5 +1,9 @@
-# Blueprint do Render — Licita Smart (API .NET + agente Rust)
+# Blueprint do Render — Licita Smart
 # Deploy: Render Dashboard > New > Blueprint > selecione este repositório
+#
+# O AI Agent agora roda DENTRO da API (.NET), em POST /api/v1/chat.
+# O serviço Rust (licita-agent) foi removido: menos um container, build de ~20s.
+# O front deve usar VITE_AGENT_URL igual ao VITE_API_URL.
 
 databases:
   - name: licita-db
@@ -8,7 +12,7 @@ databases:
     plan: free
 
 services:
-  # ---------------- API .NET ----------------
+  # ---------------- API .NET (inclui o agente em /api/v1/chat) ----------------
   - type: web
     name: licita-api
     runtime: docker
@@ -30,26 +34,12 @@ services:
         value: 'true'
       - key: Pncp__UF
         value: SC
-
-  # ---------------- agente Rust (Axum) ----------------
-  - type: web
-    name: licita-agent
-    runtime: rust
-    rootDir: agents/licita-smart-agent
-    buildCommand: cargo build --release
-    startCommand: ./target/release/licita-smart-agent
-    plan: free
-    envVars:
-      - key: APP_HOST
-        value: 0.0.0.0
-      - key: APP_PORT
-        value: '10000'
-      - key: RUST_LOG
-        value: info
-      # LLM_PROVIDER=openai exige OPENAI_API_KEY; ollama não roda no Render
-      - key: LLM_PROVIDER
+      # --- agente ---
+      # Ollama não roda no Render (precisa de GPU/RAM local), então em produção
+      # use Agent__Provider=openai + chave. Sem isso, /api/v1/chat responde 503.
+      - key: Agent__Provider
         sync: false
-      - key: LLM_MODEL
+      - key: Agent__Model
         sync: false
-      - key: OPENAI_API_KEY
+      - key: Agent__OpenAiApiKey
         sync: false

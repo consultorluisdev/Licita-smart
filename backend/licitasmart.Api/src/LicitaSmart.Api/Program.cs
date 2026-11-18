@@ -1,4 +1,5 @@
 using LicitaSmart.Api.Data;
+using LicitaSmart.Api.Features.Agent;
 using LicitaSmart.Api.Features.Licitacoes;
 using LicitaSmart.Api.Integrations.Pncp;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,19 @@ builder.Services.AddHttpClient<IPncpClient, PncpClient>((ServiceProvider, client
 
 builder.Services.AddHostedService<PncpSynchronizer>();
 
+// agente de analise (antes era o servico Rust na porta 8082)
+var agentOptions = builder.Configuration
+    .GetSection(AgentOptions.SectionName)
+    .Get<AgentOptions>() ?? new AgentOptions();
+
+builder.Services.Configure<AgentOptions>(
+    builder.Configuration.GetSection(AgentOptions.SectionName));
+
+builder.Services.AddHttpClient<AgentService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(agentOptions.TimeoutSeconds);
+});
+
 // sincronização automatica
 builder.Services.AddCors(options =>
 {
@@ -63,9 +77,14 @@ app.UseCors("Frontend");
 
 app.UseHttpsRedirection();
 
-app.MapGet("/health", () => Results.Ok(new
+app.MapGet("/health", (AgentService agent) => Results.Ok(new
 {
-    status = "ok"
+    status = "ok",
+    agent = new
+    {
+        provider = agent.Provider,
+        model = agent.Model
+    }
 }))
 .WithName("HealthCheck")
 .WithSummary("Verifica a disponibilidade da API")
