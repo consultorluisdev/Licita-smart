@@ -73,11 +73,11 @@ app.MapGet("/health", () => Results.Ok(new
 
 app.MapControllers();
 
-// mantem a criacao do banco que ja existia
-// nao executa mais o seed de licitações ficticias
+// aplica as migrations no startup (necessario em ambientes como Render)
 using(var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
 app.Run();

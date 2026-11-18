@@ -1,0 +1,55 @@
+# Blueprint do Render — Licita Smart (API .NET + agente Rust)
+# Deploy: Render Dashboard > New > Blueprint > selecione este repositório
+
+databases:
+  - name: licita-db
+    databaseName: licitasmart
+    user: licita
+    plan: free
+
+services:
+  # ---------------- API .NET ----------------
+  - type: web
+    name: licita-api
+    runtime: docker
+    dockerfilePath: ./backend/licitasmart.Api/src/LicitaSmart.Api/Dockerfile
+    dockerContext: ./backend/licitasmart.Api/src/LicitaSmart.Api
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: licita-db
+          property: connectionString
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: 'true'
+      # sincronização automática com o PNCP (pode desligar em prod: false)
+      - key: Pncp__Habilitado
+        value: 'true'
+      - key: Pncp__UF
+        value: SC
+
+  # ---------------- agente Rust (Axum) ----------------
+  - type: web
+    name: licita-agent
+    runtime: rust
+    rootDir: agents/licita-smart-agent
+    buildCommand: cargo build --release
+    startCommand: ./target/release/licita-smart-agent
+    plan: free
+    envVars:
+      - key: APP_HOST
+        value: 0.0.0.0
+      - key: APP_PORT
+        value: '10000'
+      - key: RUST_LOG
+        value: info
+      # LLM_PROVIDER=openai exige OPENAI_API_KEY; ollama não roda no Render
+      - key: LLM_PROVIDER
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
