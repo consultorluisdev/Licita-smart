@@ -40,6 +40,20 @@ public sealed class PncpSynchronizer : BackgroundService
     {
       try
       {
+        var proximaExecucao = PncpSchedule.CalcularProximaExecucao(
+            DateTime.Now,
+            _options.HorarioExecucao);
+        var espera = proximaExecucao - DateTime.Now;
+
+        _logger.LogInformation(
+            "Próxima sincronização PNCP agendada para {DataHoraLocal}.",
+            proximaExecucao);
+
+        if (espera > TimeSpan.Zero)
+        {
+          await Task.Delay(espera, stoppingToken);
+        }
+
         await SincronizarAsync(stoppingToken);
       }
       catch (OperationCanceledException)
@@ -52,19 +66,6 @@ public sealed class PncpSynchronizer : BackgroundService
         _logger.LogError(
             ex,
             "Erro durante a sincronização PNCP.");
-      }
-
-      try
-      {
-        await Task.Delay(
-            TimeSpan.FromMinutes(
-                Math.Max(1, _options.IntervaloMinutos)),
-            stoppingToken);
-      }
-      catch (OperationCanceledException)
-          when (stoppingToken.IsCancellationRequested)
-      {
-        break;
       }
     }
   }
@@ -85,6 +86,7 @@ public sealed class PncpSynchronizer : BackgroundService
         _options.MaxPaginasPorExecucao);
 
     var totalProcessado = 0;
+    var totalPaginas = 0;
 
     for (var pagina = 1;
          pagina <= maxPaginas;
@@ -99,6 +101,8 @@ public sealed class PncpSynchronizer : BackgroundService
               pagina,
               tamanhoPagina,
               cancellationToken);
+
+      totalPaginas = Math.Max(totalPaginas, resultado.TotalPaginas);
 
       if (resultado.Contratacoes.Count == 0)
         break;
@@ -122,6 +126,18 @@ public sealed class PncpSynchronizer : BackgroundService
 
       if (resultado.Contratacoes.Count < tamanhoPagina)
         break;
+
+      await Task.Delay(
+          TimeSpan.FromMilliseconds(100),
+          cancellationToken);
+    }
+
+    if (totalPaginas > maxPaginas)
+    {
+      _logger.LogWarning(
+          "A sincronização foi limitada a {Limite} páginas, mas o PNCP informou {TotalPaginas}.",
+          maxPaginas,
+          totalPaginas);
     }
 
     _logger.LogInformation(

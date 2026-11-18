@@ -4,19 +4,101 @@ import type { Licitacao } from "../types/licitacao";
 import { brl } from "../utils/format";
 import { listarLicitacoes } from "./licitacaoService";
 
-function categorize(title: string) {
+type ProcurementCategory =
+  | "Tecnologia / TI"
+  | "SaaS / Cloud"
+  | "Saúde"
+  | "Obras e Engenharia"
+  | "Alimentação"
+  | "Transporte"
+  | "Serviços"
+  | "Materiais"
+  | "Segurança"
+  | "Educação"
+  | "Meio Ambiente"
+  | "Outros";
+
+const categoryRules: {
+  category: ProcurementCategory;
+  pattern: RegExp;
+}[] = [
+  {
+    category: "SaaS / Cloud",
+    pattern:
+      /\bsaas\b|\bcloud\b|\bnuvem\b|hospedagem de (?:sistemas?|softwares?)|data ?center|datacenter/,
+  },
+  {
+    category: "Segurança",
+    pattern:
+      /ciberseguranca|seguranca da informacao|seguranca eletronica|\bvigilancia\b|\balarme\b|botao do panico|controle de acesso|\bcftv\b|cameras? de seguranca|seguranca patrimonial/,
+  },
+  {
+    category: "Alimentação",
+    pattern:
+      /generos alimenticios|\brefeicoes?\b|\bmerenda\b|\balimentos?\b|\bcestas basicas\b|\bracao\b|\balimentacao\b/,
+  },
+  {
+    category: "Serviços",
+    pattern:
+      /\bretifica\b|manutencao mecanica|manutencao de veiculos?|reparo de veiculos?/,
+  },
+  {
+    category: "Materiais",
+    pattern:
+      /\b(?:aquisicao|fornecimento|fornecer|registro de precos)\b.*\b(?:vigas?|cascalho|madeira|mobiliario|flores|mudas|plantas|varredeiras?|substratos|vasos|ferramentas?|pecas?|materiais?|insumos?)\b/,
+  },
+  {
+    category: "Meio Ambiente",
+    pattern:
+      /residuos|coleta de lixo|coleta seletiva|\besgoto\b|\bsaneamento\b|fossas? septicas?|efluentes|hidrojateamento|limpeza urbana|paisagismo|reflorestamento|plantas paisagisticas|areas verdes/,
+  },
+  {
+    category: "Educação",
+    pattern:
+      /\bensino\b|escolas?|creches?|socioeducativo|material didatico|capacitacao|treinamento|cursos?|formacao profissional|oficina de (?:artes|musica|danca|macrame)/,
+  },
+  {
+    category: "Tecnologia / TI",
+    pattern:
+      /tecnologia da informacao|informatica|\bsoftwares?\b|\bhardwares?\b|computadores?|notebooks?|sistemas? informatizados?|sistema de gestao|sistema de informacao|desenvolvimento de sistemas|aplicativos?|solucao tecnologica|licencas? de software|redes? de computadores/,
+  },
+  {
+    category: "Obras e Engenharia",
+    pattern:
+      /\bconstrucao\b|\bengenharia\b|\bbarragem\b|\bpavimentacao\b|\bedificacao\b|reforma predial|\benrocamento\b|\bdrenagem\b|\bcalcamento\b|\brevestimento\b|projeto (?:basico|executivo)|execucao de obras?|obras? de construcao|mao de obra de (?:pedreiro|servente|pintor)|servicos? de (?:pedreiro|servente|engenharia)/,
+  },
+  {
+    category: "Transporte",
+    pattern:
+      /passagens? (?:aereas?|rodoviarias?)|veiculos?|motocicletas?|onibus|frotas?|combustiveis?|manutencao mecanica|mobilidade urbana|servicos? de transporte|transporte escolar/,
+  },
+  {
+    category: "Saúde",
+    pattern:
+      /laboratorios?|exames?|medicamentos?|farmacos?|vacinas?|seringas?|lancetas?|insulina|ultrassonografia|ambulatorial|odontolog|psicolog|equoterapia|oxigenio|fisioterapia|protes(?:e|es)|procedimentos? (?:medicos|clinicos)|formula(?:s)? alimentares?|servicos? hospitalares?|atendimento hospitalar/,
+  },
+  {
+    category: "Serviços",
+    pattern:
+      /prestacao de servicos?|servicos? tecnicos?|consultoria|assessoria|credenciamento|leiloeiro|agenciamento|locacao|manutencao|limpeza|operacionalizacao|intermediacao|servicos? funerarios|servicos? juridicos?|divulgacao|maquiagem|confeccao|restauracao|diagnostico socioterritorial/,
+  },
+  {
+    category: "Materiais",
+    pattern:
+      /\b(?:aquisicao|fornecimento|fornecer|registro de precos)\b|materiais? de consumo|equipamentos? (?:de|para)|insumos? (?:de|para)/,
+  },
+];
+
+function categorize(title: string): ProcurementCategory {
   const normalized = title
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  if (/ciber|seguranca|security/.test(normalized)) return "Cibersegurança";
-  if (/dados|indicadores|analytics|\bbi\b/.test(normalized)) return "Dados / BI";
-  if (/nuvem|cloud/.test(normalized)) return "Cloud";
-  if (/desenvolvimento|software|sistema|saas|plataforma/.test(normalized)) {
-    return "Software e desenvolvimento";
-  }
-  return "Tecnologia";
+  return (
+    categoryRules.find(({ pattern }) => pattern.test(normalized))?.category ??
+    "Outros"
+  );
 }
 
 function mapOpportunity(item: Licitacao): Opportunity {

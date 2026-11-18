@@ -1,20 +1,13 @@
-import { useEffect, useState } from "react";
-import {
-  BarChart3,
-  Building2,
-  CalendarDays,
-  FileText,
-  MapPin,
-  WalletCards,
-} from "lucide-react";
+import { BarChart3, Building2, CalendarDays, FileText, MapPin, WalletCards } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { Badge } from "../components/Badge";
-import { LicitationTable } from "../components/LicitationTable";
-import { MetricCard } from "../components/MetricCard";
-import { PageHeader } from "../components/PageHeader";
-import { getDashboard } from "../services/dashboardService";
-import type { DashboardMetric, DashboardOverview } from "../types/dashboard";
-import { brl } from "../utils/format";
+import { Badge } from '../components/Badge';
+import { LicitationTable } from '../components/LicitationTable';
+import { MetricCard } from '../components/MetricCard';
+import { PageHeader } from '../components/PageHeader';
+import { getDashboard } from '../services/dashboardService';
+import type { DashboardMetric, DashboardOverview } from '../types/dashboard';
+import { brl } from '../utils/format';
 
 const metricIcons = {
   licitacoes: FileText,
@@ -23,7 +16,7 @@ const metricIcons = {
   comValor: WalletCards,
   comPrazo: CalendarDays,
   valorTotal: BarChart3,
-} satisfies Record<DashboardMetric["id"], typeof FileText>;
+} satisfies Record<DashboardMetric['id'], typeof FileText>;
 
 export function Dashboard() {
   const [dashboard, setDashboard] = useState<DashboardOverview | null>(null);
@@ -42,12 +35,12 @@ export function Dashboard() {
         const data = await getDashboard();
         if (active) setDashboard(data);
       } catch (err) {
-        console.error("Falha ao carregar a dashboard:", err);
+        console.error('Falha ao carregar a dashboard:', err);
         if (active) {
           setError(
             err instanceof Error
               ? `Não foi possível carregar as licitações: ${err.message}`
-              : "Não foi possível carregar as licitações. Verifique se a API está em execução.",
+              : 'Não foi possível carregar as licitações. Verifique se a API está em execução.',
           );
         }
       } finally {
@@ -67,13 +60,13 @@ export function Dashboard() {
     return (
       <div className="mx-auto max-w-[1600px]">
         <PageHeader
-          title="Procurement Intelligence"
+          title="Procura Inteligente com IA"
           subtitle="Monitore oportunidades públicas alinhadas ao perfil da sua empresa."
         />
         <div className="card flex min-h-[300px] items-center justify-center p-8">
           <div className="max-w-xl text-center">
             <p className="text-sm text-rose-300">
-              {error ?? "A API não retornou dados para a dashboard."}
+              {error ?? 'A API não retornou dados para a dashboard.'}
             </p>
             <button
               onClick={() => setRetry((value) => value + 1)}
@@ -90,13 +83,9 @@ export function Dashboard() {
   return (
     <div className="mx-auto max-w-[1600px]">
       <PageHeader
-        title="Procurement Intelligence"
+        title="Procura Inteligente com IA"
         subtitle="Acompanhe licitações retornadas pela API do PNCP e identifique oportunidades para sua empresa."
-        action={
-          <Badge tone="success">
-            {dashboard.opportunities.length} resultados na página
-          </Badge>
-        }
+        action={<Badge tone="success">{dashboard.opportunities.length} resultados na página</Badge>}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
@@ -118,19 +107,14 @@ export function Dashboard() {
           {dashboard.opportunityTrend.length > 0 ? (
             <div className="mt-6 grid h-56 grid-cols-7 items-end gap-3">
               {dashboard.opportunityTrend.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex h-full min-w-0 flex-col justify-end gap-2"
-                >
+                <div key={item.id} className="flex h-full min-w-0 flex-col justify-end gap-2">
                   <div
                     aria-label={`${item.title}: ${brl(item.value)}`}
                     title={`${item.title}: ${brl(item.value)}`}
                     className="rounded-t-lg bg-white/[.08] transition hover:bg-white/[.15]"
                     style={{ height: `${item.height}%` }}
                   />
-                  <span className="text-center text-[10px] text-slate-600">
-                    {item.label}
-                  </span>
+                  <span className="text-center text-[10px] text-slate-600">{item.label}</span>
                 </div>
               ))}
             </div>
@@ -170,9 +154,7 @@ export function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="mt-8 text-sm text-slate-500">
-              Nenhuma categoria disponível.
-            </p>
+            <p className="mt-8 text-sm text-slate-500">Nenhuma categoria disponível.</p>
           )}
         </section>
       </div>
